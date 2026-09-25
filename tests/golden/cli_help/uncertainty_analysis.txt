@@ -1,0 +1,30 @@
+usage: uncertainty_analysis.py [-h] [--model {wg,zones,both}]
+                               [--n-patients N_PATIENTS]
+                               [--n-forward N_FORWARD]
+                               [--epsilons EPSILONS [EPSILONS ...]]
+                               [--output-dir OUTPUT_DIR] [--seed SEED]
+                               [--max-samples MAX_SAMPLES]
+                               {per-patient,entropy,all} ...
+
+Uncertainty estimation analysis
+
+positional arguments:
+  {per-patient,entropy,all}
+    per-patient         Per-patient visualisations (MC dropout, entropy maps,
+                        calibration)
+    entropy             Population-level entropy across all patients and
+                        epsilons
+    all                 Run both per-patient and population entropy analyses
+
+options:
+  -h, --help            show this help message and exit
+  --model {wg,zones,both}
+  --n-patients N_PATIENTS
+                        Number of patients for per-patient visualisations
+  --n-forward N_FORWARD
+                        Number of MC dropout forward passes
+  --epsilons EPSILONS [EPSILONS ...]
+  --output-dir OUTPUT_DIR
+  --seed SEED
+  --max-samples MAX_SAMPLES
+                        Limit validation samples for population entropy

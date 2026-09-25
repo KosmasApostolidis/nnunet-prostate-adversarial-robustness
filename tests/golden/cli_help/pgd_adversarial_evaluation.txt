@@ -1,0 +1,108 @@
+usage: pgd_adversarial_evaluation.py [-h]
+                                     [--attack {pgd,a_pgd,auto_pgd,auto_pgd_plus,apgd_updated,segpgd,cospgd,dag,sea,alma_prox,blade,blade1,blade_mm,blade_boundary,blade_frontier}]
+                                     [--model {wg,zones,both}]
+                                     [--checkpoint CHECKPOINT] [--fold FOLD]
+                                     [--max-samples MAX_SAMPLES]
+                                     [--output-dir OUTPUT_DIR]
+                                     [--epsilons-wg EPSILONS_WG [EPSILONS_WG ...]]
+                                     [--epsilons-zones EPSILONS_ZONES [EPSILONS_ZONES ...]]
+                                     [--pgd-steps PGD_STEPS]
+                                     [--step-size STEP_SIZE] [--random-start]
+                                     [--seed SEED] [--momentum MOMENTUM]
+                                     [--normalized-grad]
+                                     [--num-restarts NUM_RESTARTS]
+                                     [--shared-trajectory] [--amp]
+                                     [--save-adv-dir SAVE_ADV_DIR]
+                                     [--log-loss-curve]
+                                     [--asr-threshold ASR_THRESHOLD]
+                                     [--resume] [--deterministic]
+                                     [--benchmark] [--attack-valid-only]
+
+PGD (L∞) adversarial evaluation for nnU-Net models
+
+options:
+  -h, --help            show this help message and exit
+  --attack {pgd,a_pgd,auto_pgd,auto_pgd_plus,apgd_updated,segpgd,cospgd,dag,sea,alma_prox,blade,blade1,blade_mm,blade_boundary,blade_frontier}
+                        pgd = fixed-step PGD; a_pgd = the manuscript's
+                        adaptive-step PGD (Table I's APGD); auto_pgd = the
+                        original Auto-PGD of Croce and Hein; apgd_updated =
+                        the improved-step arm, a cosine step backbone from
+                        2*eps down to eps/k with a bidirectional multiplier
+                        and budget-invariant checkpoints; auto_pgd_plus = a
+                        REFUTED attempt at repairing Auto-PGD for short
+                        budgets, kept only as a negative result (see its
+                        module docstring) -- it is weaker than auto_pgd, do
+                        not use it; segpgd = SegPGD (Gu et al., ECCV 2022),
+                        PGD whose per-voxel CE is split into correct/wrong
+                        voxels with a (1-lambda)/lambda schedule; cospgd =
+                        CosPGD (Agnihotri et al., ICML 2024), PGD whose per-
+                        voxel CE is scaled by the cosine similarity to the
+                        label. Both use the pgd update and step so only the
+                        objective differs; dag = Dense Adversary Generation
+                        (Xie et al., ICCV 2017), L-inf-normalised ascent on
+                        the logit gap of still-correct voxels, no random
+                        start; sea = Segmentation Ensemble Attack (Croce,
+                        Singh, Hein 2023), Auto-PGD per loss in {masked CE,
+                        balanced masked CE, Jensen-Shannon} keeping the worst
+                        Dice, three times the cost of a single-loss arm;
+                        alma_prox = ALMA prox (Rony, Pesquet, Ben Ayed, CVPR
+                        2023), the minimum-norm arm: it minimises the L-inf
+                        norm subject to the image being misclassified rather
+                        than maximising damage inside a fixed ball, so it
+                        ignores the epsilon grid while optimising and each
+                        reported epsilon keeps the worst iterate that fits
+                        inside it (--pgd-steps 500 in the paper); blade =
+                        BLADE-3, the ascending-epsilon ladder run once per
+                        objective in {dice_ce, sign-flipped boundary loss,
+                        frontier margin} keeping the worst Dice per rung,
+                        budget-matched against sea; blade1 = BLADE-1, the same
+                        ladder on dice_ce alone, budget-matched against the
+                        single-objective arms; blade_mm = BLADE-MM, the same
+                        three-objective ladder as blade but adjudicated by
+                        ranking the candidates on Dice, HD95 and ASD together
+                        instead of on Dice alone; blade_boundary and
+                        blade_frontier = the ladder on one objective each, the
+                        per-objective marginals of blade. Under --shared-
+                        trajectory the ladder optimises natively at every
+                        requested epsilon instead of projecting down from the
+                        largest. Selecting anything other than pgd also
+                        switches the defaults for momentum and random start to
+                        that attack's configuration.
+  --model {wg,zones,both}
+  --checkpoint CHECKPOINT
+  --fold FOLD
+  --max-samples MAX_SAMPLES
+  --output-dir OUTPUT_DIR
+  --epsilons-wg EPSILONS_WG [EPSILONS_WG ...]
+  --epsilons-zones EPSILONS_ZONES [EPSILONS_ZONES ...]
+  --pgd-steps PGD_STEPS
+  --step-size STEP_SIZE
+                        Step size α (default: max_eps / pgd-steps)
+  --random-start
+  --seed SEED
+  --momentum MOMENTUM   MI-PGD momentum decay μ (e.g. 1.0). 0 disables.
+  --normalized-grad     Use L2-normalized gradient direction (ignored if
+                        --momentum>0)
+  --num-restarts NUM_RESTARTS
+  --shared-trajectory   Run PGD once at max(eps) and snapshot smaller eps
+                        along the way
+  --amp                 Mixed-precision forward at evaluation time
+  --save-adv-dir SAVE_ADV_DIR
+                        If set, save adversarial volumes (.npz) to this dir
+  --log-loss-curve      Log per-step attack loss to a CSV
+  --asr-threshold ASR_THRESHOLD
+                        Dice drop threshold for attack success rate (default
+                        0.1)
+  --resume              Skip cases already in the per-sample CSV
+  --deterministic       Enable deterministic algorithms (slower, reproducible)
+  --benchmark           Enable cuDNN autotuning. The attack repeats one shape
+                        for every step of a case, so the tuning cost is
+                        amortized. Ignored under --deterministic.
+  --attack-valid-only   Confine the perturbation to voxels with a valid label
+                        (label != -1) inside the unpadded volume. The zones
+                        inputs are zero-filled outside the dilated whole gland
+                        and zero-padded to the model grid, and the deployed
+                        pipeline regenerates both after any image-level
+                        attack, so a perturbation there cannot be realised.
+                        Default off reproduces the published (unconfined)
+                        numbers.

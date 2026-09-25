@@ -1,0 +1,11 @@
+{
+  "name": "Auto-PGD (Croce & Hein, ICML 2020)",
+  "type": "auto_pgd",
+  "description": "The original Auto-PGD, ported to 3D segmentation. Step size fixed at 2*eps and halved on a failed checkpoint, published non-uniform checkpoint schedule, momentum on the iterates, returns the highest-loss iterate. Not the repo's adaptive-step PGD.",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": true,
+  "momentum": 0.0,
+  "normalized_grad": false,
+  "num_restarts": 1
+}

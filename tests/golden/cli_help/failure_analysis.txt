@@ -1,0 +1,30 @@
+usage: failure_analysis.py [-h] [--model {wg,zones,both}]
+                           [--max-samples MAX_SAMPLES] [--top-k TOP_K]
+                           [--output-dir OUTPUT_DIR]
+                           [--epsilons EPSILONS [EPSILONS ...]]
+                           [--voxel-spacing SX SY SZ]
+                           [--vis-adv-epsilon VIS_ADV_EPSILON] [--seed SEED]
+                           [--sample-seed SAMPLE_SEED]
+
+Failure case and error analysis
+
+options:
+  -h, --help            show this help message and exit
+  --model {wg,zones,both}
+  --max-samples MAX_SAMPLES
+                        Limit validation cases: first N in split order unless
+                        --sample-seed is set
+  --top-k TOP_K         Number of worst cases to report
+  --output-dir OUTPUT_DIR
+  --epsilons EPSILONS [EPSILONS ...]
+                        Epsilon values to evaluate
+  --voxel-spacing SX SY SZ
+                        Voxel spacing in mm (sx sy sz). Default is
+                        illustrative; set to your dataset.
+  --vis-adv-epsilon VIS_ADV_EPSILON
+                        Adversarial ε for worst-case slice figures (default:
+                        max positive ε in --epsilons)
+  --seed SEED           Seed for torch / numpy / random (reproducibility)
+  --sample-seed SAMPLE_SEED
+                        If set with --max-samples, subsample validation cases
+                        randomly (reproducible)

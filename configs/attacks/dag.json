@@ -1,0 +1,12 @@
+{
+  "name": "DAG (Dense Adversary Generation, Xie et al., ICCV 2017)",
+  "type": "dag",
+  "description": "Ascends sum over still-correct voxels of [logit(adversarial label) - logit(true label)], with the gradient normalised by its L-inf norm to a step gamma. No random start; stops early once every voxel is fooled. gamma = eps/n_steps and the iterate is projected onto the eps-ball (deviations from the unbounded gamma=0.5-on-[0,255] paper setting).",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": false,
+  "momentum": 0.0,
+  "normalized_grad": false,
+  "num_restarts": 1,
+  "reference": "arXiv:1703.08603, Algorithm 1, Eqs. 1-3"
+}

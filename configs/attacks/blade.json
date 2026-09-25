@@ -1,0 +1,11 @@
+{
+  "name": "BLADE-3 (boundary-weighted epsilon-ladder ensemble)",
+  "type": "blade",
+  "description": "Ascending-epsilon ladder: Auto-PGD optimises at the smallest reporting budget, then each larger ball continues from the previous rung's iterate, so every snapshot is natively optimised instead of projected down from the largest epsilon. Run once per objective in {dice_ce, sign-flipped Kervadec boundary loss, frontier margin} keeping the lowest foreground Dice per rung. Three ladders, so budget-matched against sea, not against the single-objective arms.",
+  "n_steps": 20,
+  "random_start": true,
+  "num_restarts": 1,
+  "losses": ["dice_ce", "boundary", "frontier"],
+  "k_frac": 0.1,
+  "reference": "this repository; boundary term after Kervadec et al., boundary loss for highly unbalanced segmentation (MIDL 2019), sign-flipped; selection rule after SEA, arXiv:2306.12941"
+}

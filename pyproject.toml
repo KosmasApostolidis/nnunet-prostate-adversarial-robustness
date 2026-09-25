@@ -1,0 +1,145 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mri-prostate-seg"
+version = "0.1.0"
+description = "MRI Prostate Gland and Zone Segmentor — segmentation, robustness, and adversarial evaluation toolkit"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Kosmas Apostolidis" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+# Runtime dependencies are pinned in requirements.txt to match the CUDA 11.7 / nnunetv2 2.2.1
+# stack baked into the Docker image. pyproject.toml stays loose so editable installs do not
+# fight the existing pinned environment.
+dependencies = [
+  "numpy",
+  "pydicom",
+  "pybase64",
+  "httplib2",
+  "scikit-image",
+  "shap",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=4",
+  "mypy>=1.8",
+  "types-pydicom",
+]
+
+[project.scripts]
+mri-segmentor                            = "mri_prostate_seg.cli.segmentor:main"
+mri-pgd-eval                             = "mri_prostate_seg.cli.pgd_eval:main"
+mri-slice-vulnerability                  = "mri_prostate_seg.cli.slice_vulnerability:main"
+mri-uncertainty-analysis                 = "mri_prostate_seg.cli.uncertainty_analysis:main"
+mri-failure-analysis                     = "mri_prostate_seg.cli.failure_analysis:main"
+mri-transferability-analysis             = "mri_prostate_seg.cli.transferability_analysis:main"
+mri-sensitivity-analysis                 = "mri_prostate_seg.cli.sensitivity_analysis:main"
+mri-statistical-analysis                 = "mri_prostate_seg.cli.statistical_analysis:main"
+mri-compare-robust-vs-standard           = "mri_prostate_seg.cli.compare_robust_vs_standard:main"
+mri-generate-paper-figures               = "mri_prostate_seg.cli.generate_paper_figures:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mri_prostate_seg*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+  "ignore::DeprecationWarning:scipy.*",
+  "ignore::DeprecationWarning:batchgenerators.*",
+]
+
+[tool.coverage.run]
+source = ["src/mri_prostate_seg"]
+branch = true
+# Coverage measures the "testable subset" only — modules that depend on
+# SimpleITK / MedProIO / nnunetv2 / torch / pydicom are excluded because
+# their test cost is dominated by mocking, not by exercising real logic.
+# What's left is pure NumPy + stdlib code that benefits from real tests.
+omit = [
+  "src/mri_prostate_seg/cli/*.py",
+  "src/mri_prostate_seg/models/wg_model.py",
+  "src/mri_prostate_seg/models/nnunet_loader.py",
+  "src/mri_prostate_seg/models/nnunet_call.py",
+  "src/mri_prostate_seg/eval/*.py",
+  "src/mri_prostate_seg/attacks/*.py",
+  "src/mri_prostate_seg/training/*.py",
+  "src/mri_prostate_seg/pipeline/*.py",
+  "src/mri_prostate_seg/data/dicom_io.py",
+  "src/mri_prostate_seg/viz/volumes.py",
+  "src/mri_prostate_seg/viz/explainability.py",
+  "src/mri_prostate_seg/utils/image_proc.py",
+  "src/mri_prostate_seg/utils/input_check.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+]
+fail_under = 80
+show_missing = true
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/mri_prostate_seg"]
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+follow_imports = "silent"
+ignore_missing_imports = true
+
+# Note: strict mode is intentionally not enabled. SimpleITK, MedProIO,
+# nnunetv2, torch, medpy, and pydicom ship without type stubs, so strict
+# would force every call into them to carry a ``# type: ignore``. Instead
+# we keep ``disallow_untyped_defs`` (every function we own carries
+# annotations) and rely on ``follow_imports = "silent"`` plus
+# ``ignore_missing_imports`` to absorb the untyped third-party surface.
+
+[[tool.mypy.overrides]]
+module = [
+  "nnunetv2.*",
+  "torch",
+  "torch.*",
+  "torchvision.*",
+  "SimpleITK",
+  "medpy",
+  "medpy.*",
+  "shap",
+  "pydicom",
+  "pydicom.*",
+  "skimage",
+  "skimage.*",
+  "scipy",
+  "scipy.*",
+  "matplotlib",
+  "matplotlib.*",
+  "MedProIO",
+  "pybase64",
+  "httplib2",
+  "batchgenerators",
+  "batchgenerators.*",
+]
+ignore_missing_imports = true

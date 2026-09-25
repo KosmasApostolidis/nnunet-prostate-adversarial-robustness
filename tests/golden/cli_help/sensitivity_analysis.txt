@@ -1,0 +1,14 @@
+usage: sensitivity_analysis.py [-h] [--model {wg,zones,both}]
+                               [--n-patients N_PATIENTS] [--eps EPS]
+                               [--output-dir OUTPUT_DIR] [--seed SEED]
+
+Sensitivity and perturbation analysis
+
+options:
+  -h, --help            show this help message and exit
+  --model {wg,zones,both}
+  --n-patients N_PATIENTS
+                        Number of random patients to visualise
+  --eps EPS             Epsilon for perturbation heatmap
+  --output-dir OUTPUT_DIR
+  --seed SEED

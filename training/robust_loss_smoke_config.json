@@ -1,0 +1,23 @@
+{
+  "_README": "Smoke-test fragment for the corpus AT-loss trainers. Merge the 'robust_loss' object below into the dataset's plans.json (or dataset.json) under the 'robust_loss' key, then select the corpus loss by TRAINER NAME at launch: nnUNetv2_train <DATASET> 3d_fullres <FOLD> -tr nnUNetTrainerNuAT (or nnUNetTrainerUIAT / nnUNetTrainerLBGAT). The plain TRADES baseline is -tr nnUNetTrainerRobustLoss. These values are for plumbing validation only (a 1-epoch run that reaches the adversarial phase immediately), NOT real training. nnUNetTrainerLBGAT raises NotImplementedError (frozen reference-model loading not wired). NuAT smoke: Dataset016 (WG); zones: Dataset019.",
+  "robust_loss": {
+    "lambda_corpus": 0.1,
+    "nuat_max_voxels": 512,
+    "inv_steps": 1,
+
+    "warm_adv_epochs": 0,
+    "fgsm_epochs": 1,
+    "mi_fgsm_epochs": 0,
+    "pgd_epochs": 1,
+
+    "eps_min": 0.01,
+    "eps_max": 0.02,
+    "lambda_adv_base": 1.0,
+    "lambda_gp_base": 0.1,
+    "pgd_steps": 2,
+    "pgd_restarts": 1,
+    "mi_steps": 2,
+    "max_adv_to_clean_ratio": 0.3,
+    "max_gp_to_clean_ratio": 0.03
+  }
+}

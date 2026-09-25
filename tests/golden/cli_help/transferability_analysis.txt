@@ -1,0 +1,11 @@
+usage: transferability_analysis.py [-h] [--analysis {transfer,cascaded,both}]
+                                   [--max-samples MAX_SAMPLES]
+                                   [--output-dir OUTPUT_DIR]
+
+Transferability and cascaded pipeline attack analysis
+
+options:
+  -h, --help            show this help message and exit
+  --analysis {transfer,cascaded,both}
+  --max-samples MAX_SAMPLES
+  --output-dir OUTPUT_DIR

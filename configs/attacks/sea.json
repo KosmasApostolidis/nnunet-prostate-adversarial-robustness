@@ -1,0 +1,10 @@
+{
+  "name": "SEA (Segmentation Ensemble Attack, Croce, Singh and Hein, 2023)",
+  "type": "sea",
+  "description": "Auto-PGD run once per loss in {masked CE, class-balanced masked CE, Jensen-Shannon}, keeping per case and per epsilon the candidate with the lowest foreground Dice. Costs three times the gradient evaluations of a single-loss arm. The 300-iteration red-eps schedule is not used at this budget.",
+  "n_steps": 20,
+  "random_start": true,
+  "num_restarts": 1,
+  "losses": ["mce", "mce_bal", "js"],
+  "reference": "arXiv:2306.12941; official semseg/attacker.py criterion_dict"
+}

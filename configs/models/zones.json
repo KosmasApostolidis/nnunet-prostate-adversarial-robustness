@@ -1,0 +1,10 @@
+{
+  "name": "Prostate Zones",
+  "key": "zones",
+  "dataset_folder": "Dataset019_ProstateZonesSegmentationWgFilteredLessDilated",
+  "trainer": "nnUNetTrainer__nnUNetPlans__3d_fullres",
+  "configuration": "3d_fullres",
+  "num_classes": 3,
+  "class_names": ["TZ+CZ", "PZ"],
+  "epsilons": [0, 0.02, 0.04, 0.06, 0.08, 0.1]
+}

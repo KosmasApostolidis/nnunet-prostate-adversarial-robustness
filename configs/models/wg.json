@@ -1,0 +1,10 @@
+{
+  "name": "Whole Gland",
+  "key": "wg",
+  "dataset_folder": "Dataset016_WgSegmentationPNetAndPicai",
+  "trainer": "nnUNetTrainer__nnUNetPlans__3d_fullres",
+  "configuration": "3d_fullres",
+  "num_classes": 2,
+  "class_names": ["WG"],
+  "epsilons": [0, 0.02, 0.04, 0.06, 0.08, 0.1]
+}

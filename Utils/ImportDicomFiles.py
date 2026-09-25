@@ -1,0 +1,110 @@
+#!/usr/bin/python
+
+import os
+import sys
+import os.path
+import httplib2
+import base64
+
+SUCCESS = 0
+# This function will upload a single file to Orthanc through the REST API
+def UploadFile(
+        path:str,
+        ip:str,
+        port:int,
+        username:str,
+        password:str
+    ):
+    global SUCCESS
+
+    if ip is None:
+        ip = os.environ["ORTHANC_SERVICE_NAME"]
+
+    if port is None:
+        port = os.environ["PORT"]
+
+    if username is None:
+        username = os.environ["USERNAME"]
+
+    if password is None:
+        password = os.environ["PASSWORD"]
+
+    URL = f'http://{ip}:{port}/instances'
+
+
+    f = open(path, "rb")
+    content = f.read()
+    f.close()
+
+    try:
+        sys.stdout.write("Importing %s" % path)
+
+        h = httplib2.Http()
+
+        headers = { 'content-type' : 'application/dicom' }
+
+        credentials = bytes(username + ':' + password, 'utf-8')
+        encoded_credentials = base64.b64encode(credentials)
+        headers['authorization'] = 'Basic ' + encoded_credentials.decode('utf-8') 
+        
+            
+        resp, content = h.request(URL, 'POST', 
+                                  body = content,
+                                  headers = headers)
+
+        if resp.status == 200:
+            sys.stdout.write(" => success\n")
+            SUCCESS += 1
+        else:
+            sys.stdout.write(" => failure (Is it a DICOM file?)\n")
+    
+    # Unknown exception (must be set)
+    except Exception:
+        sys.stdout.write(" => unable to connect (Is Orthanc running? Is there a password?)\n")
+
+def _upload(
+        ip:str=None,
+        port:int=None,
+        user:str=None,
+        password:str=None,
+        filename:str=None,
+    )->None:
+    ''' Upload files except if directory, uploads the dcm files inside directory, no recursive'''
+
+    if ip is None:
+        ip = os.environ["ORTHANC_SERVICE_NAME"]
+
+    if port is None:
+        port = os.environ["PORT"]
+
+    if user is None:
+        user = os.environ["USERNAME"]
+
+    if password is None:
+        password = os.environ["PASSWORD"]
+
+    if os.path.isfile(filename):
+        # Upload a single file
+        UploadFile(filename,ip,port,user,password)
+    else:
+        # Recursively upload a directory
+        for file in os.listdir(filename):
+            if file.endswith(".dcm"):
+                UploadFile(os.path.join(filename, file),ip,port,user,password)
+
+    print(f"\nSummary: {SUCCESS} DICOM file(s) have been imported")
+
+def upload(
+        dirname:str=None,
+    )->None:
+    '''
+    Uploads all dcm files inside a given directory, recursive.
+    Must have .dcm at the end.
+    '''
+    for dirs,_,files in os.walk(dirname):
+
+        for file in files:
+            if file.endswith(".dcm"):
+                _upload(
+                    filename= os.path.join(dirs,file)
+                )

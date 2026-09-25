@@ -1,0 +1,12 @@
+{
+  "name": "CosPGD (Agnihotri, Jung, Keuper, ICML 2024)",
+  "type": "cospgd",
+  "description": "PGD whose per-voxel cross-entropy is scaled by the detached cosine similarity between the softmax prediction and the one-hot label. Same update, step (eps/n_steps), random start and projection as the pgd arm; only the objective differs.",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": true,
+  "momentum": 0.0,
+  "normalized_grad": false,
+  "num_restarts": 1,
+  "reference": "arXiv:2302.02213; official cospgd_scale, untargeted"
+}

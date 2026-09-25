@@ -1,0 +1,12 @@
+{
+  "name": "A-PGD (Adaptive PGD)",
+  "type": "a_pgd",
+  "description": "Adaptive-step PGD. Step size adapts at checkpoints based on loss trend. If loss stagnates, halves step and restarts from best-so-far point — fewer wasted iterations on flat regions.",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": true,
+  "momentum": 0.9,
+  "num_restarts": 1,
+  "adaptation_rate": 0.1,
+  "checkpoints": [0.25, 0.5, 0.75]
+}

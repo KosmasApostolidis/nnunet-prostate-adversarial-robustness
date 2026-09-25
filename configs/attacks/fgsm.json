@@ -1,0 +1,7 @@
+{
+  "name": "FGSM (Fast Gradient Sign Method)",
+  "type": "fgsm",
+  "description": "Single-step L∞ attack. x_adv = x + eps * sign(∇_x L). Fast but weaker than iterative methods.",
+  "random_start": false,
+  "normalized_grad": false
+}

@@ -1,0 +1,20 @@
+usage: statistical_analysis.py [-h] [--input-dir INPUT_DIR]
+                               [--output-dir OUTPUT_DIR]
+                               [--plot-eps [PLOT_EPS ...]]
+
+Statistical analysis of FGSM evaluation results
+
+options:
+  -h, --help            show this help message and exit
+  --input-dir INPUT_DIR
+                        Directory with FGSM CSV results (default:
+                        /home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-
+                        and-Zone-Segmentor/experiments/fgsm_results)
+  --output-dir OUTPUT_DIR
+                        Output directory (default:
+                        /home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-
+                        and-Zone-Segmentor/experiments/statistical_results)
+  --plot-eps [PLOT_EPS ...]
+                        ε list for WG–zones correlation (and filtering).
+                        Scatter & Bland-Altman use fixed ε ∈ {0, 0.5, 1}.
+                        Default: all ε>0 in per-sample data.

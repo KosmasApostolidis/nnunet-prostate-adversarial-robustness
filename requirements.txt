@@ -1,0 +1,12 @@
+# Runtime stack of the dimzaridis/faith_lsp6 image.  torch / nnunetv2 match the
+# environment that trained and validated the v1 and v2 checkpoints (nnunetv2
+# >= 2.4 is required by the plans format; 2.6.4 is what trained them).  numpy is
+# pinned by MedProIO==0.1.1 (numpy==1.26.2).  torch is resolved from
+# https://download.pytorch.org/whl/cu128 — see dockerfile.
+torch==2.10.0
+nnunetv2==2.6.4
+numpy==1.26.2
+MedProIO==0.1.1
+pydicom==2.4.4
+pybase64
+httplib2

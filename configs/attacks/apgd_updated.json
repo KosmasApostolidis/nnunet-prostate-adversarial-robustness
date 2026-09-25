@@ -1,0 +1,11 @@
+{
+  "name": "Updated A-PGD (improved step size)",
+  "type": "apgd_updated",
+  "description": "Adaptive-step PGD with a cosine step backbone from 2*eps down to eps/k, a bidirectional multiplier bounded to [0.25, 4.0], and checkpoints at fixed fractions of the budget. Fixes the campaign attack's 40x-too-fine step range and Auto-PGD's halve-only, floorless schedule. New work; not part of any published result.",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": true,
+  "momentum": 0.9,
+  "normalized_grad": false,
+  "num_restarts": 1
+}

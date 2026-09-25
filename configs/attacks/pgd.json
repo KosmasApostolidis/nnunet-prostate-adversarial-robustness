@@ -1,0 +1,11 @@
+{
+  "name": "PGD (Projected Gradient Descent)",
+  "type": "pgd",
+  "description": "Multi-step L∞ PGD attack. At each iteration: gradient sign step + L∞ projection + intensity clamping.",
+  "n_steps": 20,
+  "step_size": null,
+  "random_start": true,
+  "momentum": 0.0,
+  "normalized_grad": false,
+  "num_restarts": 1
+}

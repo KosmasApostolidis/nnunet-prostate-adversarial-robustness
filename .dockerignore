@@ -1,0 +1,60 @@
+# --- entries kept from the previous file ---------------------------------------
+ProcancerPatients
+image_formatting.py
+dicom_outputs
+Materials
+orthanc_db
+Outputs
+.gitattributes
+.gitignore
+docker-compose.yaml
+docker-compose2.yaml
+dockerfile
+README.md
+logo.png
+LICENSE
+nginx_ohif.conf
+ohif-orthanc.jpg
+ohif.js
+orthanc.json
+orthanc.env
+notebooks
+demoruns_delete.ipynb
+
+# --- trees the runtime never reads ---------------------------------------------
+.git
+.claude
+results
+paper
+rebuttal_paper2
+logs
+tests
+experiments
+training
+docs
+configs
+deploy
+wg_prostate_net_picai
+zonal_prostate_net_picai
+Pats
+*.pdf
+nohup.out
+**/__pycache__
+*.egg-info
+
+# --- nnUnet_paths: exclude everything (63 GB), re-include only the four model
+# folders (plans.json, dataset.json, checkpoint).  nnUNet_raw/ is created at
+# runtime by the pipeline's os.makedirs calls, so it is not shipped.
+nnUnet_paths/**
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/plans.json
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/dataset.json
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/plans.json
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/dataset.json
+!nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/fold_all/checkpoint_final.pth
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainer__nnUNetPlans__3d_fullres/plans.json
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainer__nnUNetPlans__3d_fullres/dataset.json
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/plans.json
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/dataset.json
+!nnUnet_paths/nnUNet_results/Dataset019_ProstateZonesSegmentationWgFilteredLessDilated/nnUNetTrainerPGDATFinetune__nnUNetResEncUNetLPlans__3d_fullres/fold_all/checkpoint_final.pth

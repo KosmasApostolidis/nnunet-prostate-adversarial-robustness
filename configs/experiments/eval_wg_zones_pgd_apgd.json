@@ -1,0 +1,12 @@
+{
+  "name": "WG + Zones × FGSM + PGD + A-PGD",
+  "description": "Evaluate both Whole Gland and Zones models under FGSM, PGD, and A-PGD attacks across epsilon sweep.",
+  "models": ["wg", "zones"],
+  "attacks": ["fgsm", "pgd", "a_pgd"],
+  "output_dir": "wg_zones_adversarial_robustness_results",
+  "folds": [0, 1, 2, 3, 4],
+  "max_samples": null,
+  "seed": 42,
+  "shared_trajectory": true,
+  "batch_size": 1
+}

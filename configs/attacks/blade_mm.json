@@ -1,0 +1,12 @@
+{
+  "name": "BLADE-MM (multi-metric adjudication)",
+  "type": "blade_mm",
+  "description": "The BLADE ladder run once per objective in {dice_ce, sign-flipped Kervadec boundary loss, frontier margin}, but the winner of each rung is chosen by ranking the candidates on every metric the campaign reports -- Dice, HD95 and ASD -- rather than on foreground Dice alone. Rank 1 per metric is the most damaging value, ties share the average rank, the lowest mean rank wins and ties break on Dice. Metrics with fewer than two finite candidate values rank nobody. Same cost and same objectives as blade; only the adjudication differs.",
+  "n_steps": 20,
+  "random_start": true,
+  "num_restarts": 1,
+  "losses": ["dice_ce", "boundary", "frontier"],
+  "k_frac": 0.1,
+  "selection": "mean rank over {dice, hd95, asd}, ties broken by lower Dice",
+  "reference": "this repository; fixes the Dice-only oracle in blade.py and sea.py"
+}

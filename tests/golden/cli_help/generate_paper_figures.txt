@@ -1,0 +1,12 @@
+usage: generate_paper_figures.py [-h] [--fgsm-dir FGSM_DIR]
+                                 [--pgd-dir PGD_DIR] [--noise-dir NOISE_DIR]
+                                 [--output-dir OUTPUT_DIR]
+
+Generate publication-ready figures and tables
+
+options:
+  -h, --help            show this help message and exit
+  --fgsm-dir FGSM_DIR
+  --pgd-dir PGD_DIR
+  --noise-dir NOISE_DIR
+  --output-dir OUTPUT_DIR

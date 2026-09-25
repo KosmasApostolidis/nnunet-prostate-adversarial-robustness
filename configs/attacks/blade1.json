@@ -1,0 +1,10 @@
+{
+  "name": "BLADE-DiceCE (epsilon ladder, Dice-CE objective only)",
+  "type": "blade1",
+  "description": "The BLADE ascending-epsilon ladder run on dice_ce_loss alone: one Auto-PGD run per reporting epsilon, each warm-started from the rung below, so every reported budget is optimised natively instead of projected down from the largest. One of the three per-objective marginals of blade, alongside blade_boundary and blade_frontier. Costs the same as a native per-epsilon single-objective arm and is the budget-matched comparator for pgd, a_pgd, auto_pgd, segpgd and cospgd. The arm key stays blade1 so the committed results remain addressable.",
+  "n_steps": 20,
+  "random_start": true,
+  "num_restarts": 1,
+  "losses": ["dice_ce"],
+  "reference": "this repository"
+}

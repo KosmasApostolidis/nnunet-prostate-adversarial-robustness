@@ -1,0 +1,190 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# nnU-Net / project-specific bulky data (do not commit patient data or weights)
+Pats/
+nnUnet_paths/nnUNet_preprocessed/
+nnUnet_paths/nnUNet_results/
+# Per-fold preprocessed training/validation volumes (patient data, ~33 GB)
+wg_prostate_net_picai/
+zonal_prostate_net_picai/
+# Prediction volumes and derived analysis outputs (regenerable, ~1.8 GB)
+results/
+# Raw training volumes and labels (keep dataset.json / plans via selective add if needed)
+nnUnet_paths/nnUNet_raw/**/imagesTr/
+nnUnet_paths/nnUNet_raw/**/labelsTr/
+nnUnet_paths/nnUNet_raw/**/imagesTs/
+nnUnet_paths/nnUNet_raw/**/labelsTs/
+nnUnet_paths/nnUNet_raw/**/*.nii.gz
+nnUnet_paths/nnUNet_raw/**/*.npz
+
+# Legacy / local paths
+misc_files
+ProcancerPatients
+ProCancer-i-whitelist1.script
+dicom_outputs
+orthanc_db
+Outputs
+notebooks
+demoruns_delete.ipynb
+toxarri.rar
+toxarri
+
+# Experiment and analysis outputs (regenerable)
+fgsm_results/
+fgsm_results_robust/
+fgsm_fold_ensemble_results/
+pgd_results/
+noise_results/
+uncertainty_results/
+sensitivity_results/
+results/failure_results/
+results/slice_vulnerability_results/
+slice_boundary_decomposition_results/
+statistical_results/
+explainability_results/
+transfer_results/
+dataset016_fgsm*/
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.coverage_*.json
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django / Flask
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+# .python-version
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder / Rope
+.spyderproject
+.spyproject
+.ropeproject
+
+# mkdocs
+/site
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Cython
+cython_debug/
+
+# JetBrains / VS Code / Cursor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Weights & biases / ML tooling
+wandb/
+mlruns/
+lightning_logs/
+
+# Logs
+*.log
+
+# custom
+
+# Regenerable per-slice cache (65MB); rebuild with
+# experiments/analyze_reviewer2_size_sensitivity.py from the
+# *_all_folds_per_slice_fgsm.csv records, which are tracked.
+rebuttal_paper2/slice_anatomy_corrected/all_folds_per_slice_with_shape.csv

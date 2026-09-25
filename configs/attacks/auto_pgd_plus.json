@@ -1,0 +1,7 @@
+{
+  "name": "Auto-PGD+ (Auto-PGD repaired for short budgets)",
+  "type": "auto_pgd_plus",
+  "n_steps": 20,
+  "random_start": true,
+  "notes": "Geometric step backbone from 2*eps to eps/k, a multiplier bounded to [0.25, 1.0] so it can only hold the step at or below that backbone, immediate backtracking on any losing iteration, x_adv_old reset on restart, and an oscillation window floored at 2. Momentum is on the iterates at Auto-PGD's hard-coded 0.75; there is no momentum or step-size knob."
+}
