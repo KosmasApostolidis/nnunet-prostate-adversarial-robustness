@@ -80,18 +80,22 @@ If you are retraining on your own data instead, run `nnUNetv2_plan_and_preproces
 
 All commands are run from the repository root. Add `--max-samples 5` to any of them for a quick smoke test.
 
-Table I, the slice-level analyses (Figs. 1–2) and the regional statistics all come from one runner,
-`experiments/slice_vulnerability_analysis.py`. It attacks each case natively at every ε (nothing is projected down from a
-larger budget) and writes per-slice and per-case CSVs. HD95 and ASD are in physical mm, and ASD is the symmetric
-average surface distance (`medpy.assd`).
+The slice-level analyses (Figs. 1–2 and every statistic in the text) come from one runner,
+`experiments/slice_vulnerability_analysis.py`, followed by two analysis scripts. The runner attacks each case natively at
+every ε (nothing is projected down from a larger budget) and writes per-slice and per-case CSVs. HD95 and ASD are in
+physical mm, and ASD is the symmetric average surface distance (`medpy.assd`).
 
 | Paper result | Command |
 |--------------|---------|
 | Everything below, all folds, then aggregated | `PARALLEL=4 bash scripts/run_paper_attacks.sh` |
 | One arm, one model, one fold | `python experiments/slice_vulnerability_analysis.py --model wg --fold <N> --attack <arm> --seed 42 --output-dir results/paper/<arm>` |
-| Aggregate (Table I, regional ΔDice, Spearman, area-quartile contrasts) | `python experiments/camera_ready_analysis.py --root results/paper --arms fgsm noise pgd auto_pgd` |
-| Fig. 3 (qualitative grid) | `python experiments/generate_camera_ready_fig3.py` |
-| 100-step reliability subset | add `--n-steps 100 --max-samples 40` to the single-run command for `pgd` / `auto_pgd`, fold 0 |
+| Regional ΔDice, Spearman, area-quartile contrasts | `python experiments/camera_ready_analysis.py --root results/paper --arms fgsm noise pgd auto_pgd` |
+| Prediction flip (adversarial vs clean prediction) | `python experiments/prediction_flip_analysis.py --attack <fgsm\|noise> --model <wg\|zones> --fold <N> --output-dir results/paper/prediction_flip` |
+| Area- and clean-Dice-adjusted contrasts, FGSM − noise, label-source split, ASD change, flip statistics | `python experiments/slice_statistics.py --root results/paper --flip-root results/paper/prediction_flip` |
+
+The primary analysis is FGSM at ε = 0.1 with the ±ε noise control. The whole-volume results of an earlier, longer version
+(PGD and Auto-PGD Dice tables, qualitative grid) can still be produced with `camera_ready_analysis.py` and
+`experiments/generate_camera_ready_fig3.py`.
 
 `<arm>` is one of `noise` (random ±ε sign noise), `fgsm`, `pgd` (random start, step 2.5ε/k, k = 20) or `auto_pgd`
 (Croce & Hein's Auto-PGD, Dice + CE objective, k = 20); `--model` is `wg` or `zones`; `<N>` = 0–4. The ε grid is
