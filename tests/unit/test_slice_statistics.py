@@ -15,10 +15,27 @@ for path in (REPO_ROOT, REPO_ROOT / "src"):
         sys.path.insert(0, str(path))
 
 from experiments.slice_statistics import (  # noqa: E402
+    _prepare,
     fixed_effects_ols,
     label_source,
     paired_excess,
 )
+
+
+def test_prepare_converts_slice_asd_from_pixels_to_mm() -> None:
+    # metrics.slice_asd measures in pixels; both models are 0.5 mm in-plane.
+    frame = pd.DataFrame(
+        {
+            "epsilon": [0.1, 0.1],
+            "gt_area": [400, 100],
+            "case_id": ["ProstateWG_10002", "ProstateWG_10010"],
+            "asd_change": [2.0, np.nan],
+        }
+    )
+    out = _prepare(frame, 0.1)
+    assert out["asd_change_mm"].iloc[0] == pytest.approx(1.0)
+    assert np.isnan(out["asd_change_mm"].iloc[1])
+    assert out["area_mm2"].tolist() == pytest.approx([100.0, 25.0])
 
 
 def _synthetic_slices(base_effect: float, seed: int = 0) -> pd.DataFrame:

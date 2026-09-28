@@ -48,7 +48,9 @@ MODELS = ("wg", "zones")
 CLASSES = ("WG", "TZ+CZ", "PZ")
 REGIONS = ("Base", "Mid", "Apex")
 N_FOLDS = 5
-MM2_PER_PIXEL = 0.5 * 0.5
+# Both models are 0.5 x 0.5 mm in-plane (3d_fullres plans); metrics.slice_asd is in pixels.
+MM_PER_PIXEL = 0.5
+MM2_PER_PIXEL = MM_PER_PIXEL * MM_PER_PIXEL
 N_BOOT = 1000
 PICAI_ID = r"ProstateWG_\d{5}"
 PAIR_KEY = ["class", "case_id", "slice_idx"]
@@ -64,6 +66,8 @@ def label_source(case_ids: pd.Series) -> pd.Series:
 def _prepare(frame: pd.DataFrame, eps: float) -> pd.DataFrame:
     frame = frame[np.isclose(frame["epsilon"], eps) & (frame["gt_area"] > 0)].copy()
     frame["area_mm2"] = frame["gt_area"] * MM2_PER_PIXEL
+    if "asd_change" in frame:
+        frame["asd_change_mm"] = frame["asd_change"] * MM_PER_PIXEL
     frame["source"] = label_source(frame["case_id"])
     return frame
 
@@ -280,7 +284,7 @@ def dice_tables(fgsm: pd.DataFrame, noise: pd.DataFrame) -> dict[str, pd.DataFra
     fgsm = add_area_quartile(fgsm)
     paired = paired_excess(fgsm, noise, "dice_drop")
     wg = fgsm[fgsm["class"] == "WG"]
-    asd = fgsm.dropna(subset=["asd_change"])
+    asd = fgsm.dropna(subset=["asd_change_mm"])
     return {
         "fe_dice_drop": _stack(
             [({"group": n}, fixed_effects_ols(g, "dice_drop")) for n, g in groups(fgsm)]
@@ -326,7 +330,7 @@ def dice_tables(fgsm: pd.DataFrame, noise: pd.DataFrame) -> dict[str, pd.DataFra
                             (fgsm["class"] == n).sum() - len(g)
                         ),
                     },
-                    fixed_effects_ols(g, "asd_change"),
+                    fixed_effects_ols(g, "asd_change_mm"),
                 )
                 for n, g in groups(asd)
                 if n in CLASSES
