@@ -82,8 +82,9 @@ All commands are run from the repository root. Add `--max-samples 5` to any of t
 
 The slice-level analyses (Figs. 1–2 and every statistic in the text) come from one runner,
 `experiments/slice_vulnerability_analysis.py`, followed by two analysis scripts. The runner attacks each case natively at
-every ε (nothing is projected down from a larger budget) and writes per-slice and per-case CSVs. HD95 and ASD are in
-physical mm, and ASD is the symmetric average surface distance (`medpy.assd`).
+every ε (nothing is projected down from a larger budget) and writes per-slice and per-case CSVs. In the per-case CSVs HD95 and ASD are in
+physical mm (ASD is the symmetric `medpy.assd`); in the per-slice CSVs they are in pixels (0.5 mm in-plane), and
+`slice_statistics.py` converts the per-slice ASD change to mm.
 
 | Paper result | Command |
 |--------------|---------|
