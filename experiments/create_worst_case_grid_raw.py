@@ -46,7 +46,7 @@ ATTACKS = ["fgsm", "pgd", "a_pgd"]
 CLASSES = ["WG", "TZCZ", "PZ"]
 CLASS_LABELS = {"WG": "WG", "TZCZ": "TZ+CZ", "PZ": "PZ"}
 CLASS_IDX = {"WG": 1, "TZCZ": 1, "PZ": 2}
-ATTACK_LABELS = {"fgsm": "FGSM", "pgd": "PGD", "a_pgd": "APGD"}
+ATTACK_LABELS = {"fgsm": "FGSM", "pgd": "PGD", "a_pgd": "AS-PGD"}
 
 FN_COLOR = np.array([0.20, 0.47, 0.84, 0.55])  # blue   — GT not captured
 FP_COLOR = np.array([0.96, 0.42, 0.17, 0.55])  # orange — spurious prediction
@@ -214,7 +214,7 @@ def main() -> None:
         }
     )
 
-    fig, axes = plt.subplots(3, 3, figsize=(14, 11.2))
+    fig, axes = plt.subplots(len(ATTACKS), 3, figsize=(14, 11.2 * len(ATTACKS) / 3))
     fig.subplots_adjust(
         wspace=0.04, hspace=0.08, left=0.01, right=0.99, bottom=0.04, top=0.95
     )

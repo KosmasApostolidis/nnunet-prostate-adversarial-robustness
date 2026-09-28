@@ -3,11 +3,11 @@
 Code for the paper:
 
 > K. K. Apostolidis, D. I. Zaridis, V. C. Pezoulas, N. S. Tachos, E. Mylona, K. Marias, M. Tsiknakis, and D. I. Fotiadis,
-> **"Evaluating the Adversarial Robustness of nnU-Net: A Slice-Level Vulnerability Analysis in Prostate MRI Segmentation."**
+> **"A Slice-Level Adversarial Vulnerability Analysis of nnU-Net in Prostate MRI Segmentation."**
 
 We attack two 3D nnU-Net v2 models, one for the whole gland (WG) and one for the prostate zones (TZ+CZ and PZ), with
-FGSM, PGD and adaptive-step PGD (AS-PGD). We then measure where along the gland (base, mid-gland, apex) the
-segmentation breaks down.
+FGSM, PGD and Auto-PGD (Croce & Hein), and compare them with a random ±ε sign-noise control. We then measure where
+along the gland (base, mid-gland, apex) the segmentation breaks down.
 
 ## What is in this repository
 
@@ -80,28 +80,37 @@ If you are retraining on your own data instead, run `nnUNetv2_plan_and_preproces
 
 All commands are run from the repository root. Add `--max-samples 5` to any of them for a quick smoke test.
 
+Table I, the slice-level analyses (Figs. 1–2) and the regional statistics all come from one runner,
+`experiments/slice_vulnerability_analysis.py`. It attacks each case natively at every ε (nothing is projected down from a
+larger budget) and writes per-slice and per-case CSVs. HD95 and ASD are in physical mm, and ASD is the symmetric
+average surface distance (`medpy.assd`).
+
 | Paper result | Command |
 |--------------|---------|
-| FGSM | `python experiments/fgsm_adversarial_evaluation.py --model both --all-folds --output-dir results/fgsm` |
-| PGD | `python experiments/pgd_adversarial_evaluation.py --attack pgd --model both --fold <N> --pgd-steps 20 --output-dir results/pgd` |
-| AS-PGD | `python experiments/pgd_adversarial_evaluation.py --attack a_pgd --model both --fold <N> --pgd-steps 20 --output-dir results/as_pgd` |
-| Slice-level vulnerability (base / mid / apex) | `python experiments/slice_vulnerability_analysis.py --model both --fold <N> --output-dir results/slice` |
+| Everything below, all folds, then aggregated | `PARALLEL=4 bash scripts/run_paper_attacks.sh` |
+| One arm, one model, one fold | `python experiments/slice_vulnerability_analysis.py --model wg --fold <N> --attack <arm> --seed 42 --output-dir results/paper/<arm>` |
+| Aggregate (Table I, regional ΔDice, Spearman, area-quartile contrasts) | `python experiments/camera_ready_analysis.py --root results/paper --arms fgsm noise pgd auto_pgd` |
+| Fig. 3 (qualitative grid) | `python experiments/generate_camera_ready_fig3.py` |
+| 100-step reliability subset | add `--n-steps 100 --max-samples 40` to the single-run command for `pgd` / `auto_pgd`, fold 0 |
 
-Run the PGD, AS-PGD and slice-level commands for each fold `<N>` = 0–4. The default ε grid is
-{0, 0.02, 0.04, 0.06, 0.08, 0.1}; `--epsilons-wg` and `--epsilons-zones` override it. The seed is 42 throughout. Full
-runs take many GPU-hours per fold.
+`<arm>` is one of `noise` (random ±ε sign noise), `fgsm`, `pgd` (random start, step 2.5ε/k, k = 20) or `auto_pgd`
+(Croce & Hein's Auto-PGD, Dice + CE objective, k = 20); `--model` is `wg` or `zones`; `<N>` = 0–4. The ε grid is
+{0, 0.02, 0.04, 0.06, 0.08, 0.1} in z-score units. The seed is 42 throughout, but cuDNN is not forced into deterministic
+mode, so single iterative-attack cases can differ between GPU runs; fold-level aggregates agree to within about 0.002 Dice.
+The iterative arms take several GPU-hours per fold.
 
 ## Attacks
 
-The paper uses the first three. The others are implemented, configured and runnable through the same script
-(`--attack <name>`).
+The paper uses FGSM, PGD and Auto-PGD (`auto_pgd.py`), all run through
+`src/mri_prostate_seg/experiments/slice_vulnerability/perturbations.py`. The others are implemented, configured and
+runnable through `experiments/pgd_adversarial_evaluation.py --attack <name>`.
 
 | `--attack` | Module | Attack |
 |------------|--------|--------|
 | — (separate script) | `fgsm.py` | FGSM: one signed-gradient step |
 | `pgd` | `pgd.py` | PGD, L∞ |
-| `a_pgd` | `a_pgd_campaign.py` | AS-PGD, the paper's adaptive-step PGD (not Croce & Hein's Auto-PGD) |
-| `auto_pgd` | `auto_pgd.py` | Auto-PGD (Croce & Hein, ICML 2020), ported to 3D segmentation |
+| `auto_pgd` | `auto_pgd.py` | Auto-PGD (Croce & Hein, ICML 2020), ported to 3D segmentation; the paper's APGD |
+| `a_pgd` | `a_pgd_campaign.py` | adaptive-step PGD (AS-PGD); used in an earlier version of the paper, not in the current one |
 | `apgd_updated` | `apgd_updated.py` | AS-PGD with a cosine step-size schedule |
 | `segpgd` | `segpgd.py` | SegPGD (Gu et al., ECCV 2022) |
 | `cospgd` | `cospgd.py` | CosPGD (Agnihotri et al., ICML 2024) |
@@ -112,7 +121,7 @@ The paper uses the first three. The others are implemented, configured and runna
 
 Notes:
 
-- `a_pgd_campaign.py` is frozen so that the published AS-PGD numbers stay reproducible. `a_pgd.py` is a corrected
+- `a_pgd_campaign.py` is frozen so that the earlier AS-PGD numbers stay reproducible. `a_pgd.py` is a corrected
   version with a different best-iterate rule, which makes it a weaker attack. Use it for new work.
 - `auto_pgd_plus.py` is a documented negative result (weaker than `auto_pgd`). It is kept for reference only.
 
