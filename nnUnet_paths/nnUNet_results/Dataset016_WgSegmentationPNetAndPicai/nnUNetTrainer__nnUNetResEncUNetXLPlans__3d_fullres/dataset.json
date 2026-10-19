@@ -1,0 +1,60 @@
+{
+    "channel_names": {
+        "0": "T2"
+    },
+    "labels": {
+        "background": 0,
+        "WG": 1
+    },
+    "numTraining": 1396,
+    "file_ending": ".nii.gz",
+    "adv_training": {
+        "eps": 0.01961,
+        "fast_alpha": 0.02451,
+        "free_m": 8,
+        "yopo_m": 5,
+        "yopo_n": 3,
+        "yopo_alpha": 0.01961,
+        "pgd_steps": 7,
+        "pgd_alpha": 0.007,
+        "trades_beta": 6.0,
+        "align_lambda": 0.2,
+        "lambda_nuat": 0.1,
+        "eps_label": 0.1,
+        "lambda_lbgat": 1.0,
+        "awp_gamma": 0.005,
+        "awp_warmup_epochs": 0,
+        "amata_eps_min": 0.0049,
+        "amata_eps_max": 0.01961,
+        "amata_steps_min": 1,
+        "amata_steps_max": 7,
+        "lbgat_reference_checkpoint": "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+        "ensemble_self_ratio": 0.5,
+        "ensemble_source_checkpoints": [
+            "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+            "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_1/checkpoint_final.pth",
+            "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_2/checkpoint_final.pth",
+            "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_3/checkpoint_final.pth",
+            "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_4/checkpoint_final.pth"
+        ],
+        "finetune_checkpoint": "/home/medadmin/kosmasapostolidis/MRI-Prostate-Gland-and-Zone-Segmentor/nnUnet_paths/nnUNet_results/Dataset016_WgSegmentationPNetAndPicai/nnUNetTrainer__nnUNetResEncUNetLPlans__3d_fullres/fold_all/checkpoint_final.pth"
+    },
+    "robust_loss": {
+        "eps_min": 0.01,
+        "eps_max": 0.05,
+        "lambda_adv_base": 1.0,
+        "lambda_gp_base": 0.1,
+        "pgd_steps": 3,
+        "step_scale": 1.0,
+        "mi_steps": 3,
+        "momentum": 0.9,
+        "pgd_restarts": 1,
+        "max_adv_to_clean_ratio": 0.3,
+        "max_gp_to_clean_ratio": 0.03,
+        "ratio_ema_momentum": 0.95,
+        "warm_adv_epochs": 400,
+        "fgsm_epochs": 200,
+        "mi_fgsm_epochs": 200,
+        "pgd_epochs": 200
+    }
+}

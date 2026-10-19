@@ -104,6 +104,36 @@ The primary analysis is FGSM at ε = 0.1 with the ±ε noise control. The whole-
 mode, so single iterative-attack cases can differ between GPU runs; fold-level aggregates agree to within about 0.002 Dice.
 The iterative arms take several GPU-hours per fold.
 
+## Reproducing the ResEnc paper (EMBC 2027)
+
+"Adversarial Robustness of nnU-Net Prostate MRI Segmentation Is Associated with Batch Size" compares nnU-Net with the ResEnc-M/L/XL presets. Their plans are in `nnUnet_paths/nnUNet_results/<dataset>/nnUNetTrainer__nnUNetResEncUNet{M,L,XL}Plans__3d_fullres/`. Weights are not released.
+
+```bash
+# attack campaigns: nnU-Net + ResEnc-M/L/XL, WG and zones, five folds
+bash scripts/run_resenc_attack_campaigns.sh
+# Tables I-II, the decomposition and the per-fold/per-epsilon evidence
+PYTHONPATH=src python experiments/analyze_attack_architecture_stats.py \
+    --arms fgsm pgd segpgd cospgd dag auto_pgd auto_pgd_r3 sea \
+    --output-dir results/blade_attack/attack_comparison/stats_no_blade
+PYTHONPATH=src python experiments/analyze_resenc_paper_evidence.py \
+    --output-dir results/blade_attack/attack_comparison/stats_no_blade
+PYTHONPATH=src python experiments/analyze_resenc_revision_evidence.py
+# margin-loss / 100-iteration and transfer checks (WG fold 0, every 9th case)
+for a in unet resenc_m resenc_xl; do
+  PYTHONPATH=src python experiments/resenc_attack_sanity_subset.py --arch $a --every 9 \
+      --runs dice_ce:20 dice_ce:100 margin:20 margin:100 \
+      --output-dir results/blade_attack/attack_comparison/stats_no_blade/revision/attack_sanity
+done
+PYTHONPATH=src python experiments/resenc_transfer_subset.py \
+    --output-dir results/blade_attack/attack_comparison/stats_no_blade/revision/attack_sanity
+PYTHONPATH=src python experiments/analyze_resenc_round3_evidence.py
+# zonal input region = reference zone mask dilated by a 5-voxel ball
+python experiments/check_zonal_confinement_source.py --n 12
+# figures
+PYTHONPATH=src python experiments/plot_resenc_paper_figures.py --compact
+PYTHONPATH=src python experiments/plot_resenc_paper_figures.py --fig2-steps
+```
+
 ## Attacks
 
 The paper uses FGSM, PGD and Auto-PGD (`auto_pgd.py`), all run through

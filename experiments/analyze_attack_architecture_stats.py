@@ -26,9 +26,24 @@ plus batch-size variants, not a capacity sweep.
 All paired machinery is imported from ``analyze_main_comparison_stats.py`` so
 the two share provenance.
 
+``--arms`` restricts the roster to a chosen subset (e.g. an 8-arm run that
+excludes every BLADE variant). Layer 1 and the BLADE-vs-baseline table are
+computed only from the requested arms, so their BH families are recomputed on
+that subset. Layer 2 falls back the same way when the requested roster is not
+the full default: it recomputes the per-arm medians and the all-pairs
+Wilcoxon/BH straight from the per-sample data (via ``median_summary`` and
+``pairwise_median_tests``) restricted to those arms, instead of reading the
+tree's own full-roster CSVs, whose BH correction was computed over every arm.
+The default roster still reads those CSVs, to keep byte-identical output. The
+BLADE-vs-baseline table is skipped entirely when the requested arms do not
+cover every BLADE arm and every baseline it is compared against.
+
 Usage::
 
     PYTHONPATH=src python experiments/analyze_attack_architecture_stats.py
+    PYTHONPATH=src python experiments/analyze_attack_architecture_stats.py \
+        --arms fgsm pgd segpgd cospgd dag auto_pgd auto_pgd_r3 sea \
+        --output-dir results/blade_attack/attack_comparison/stats_no_blade
 """
 
 from __future__ import annotations
@@ -52,6 +67,8 @@ from analyze_main_comparison_stats import (  # noqa: E402
     _rank_biserial,
     load_per_sample,
     mean_over_epsilons,
+    median_summary,
+    pairwise_median_tests,
     build_matrix,
 )
 from plot_architecture_comparison import ARCH_STYLE  # noqa: E402
@@ -90,9 +107,39 @@ TREES = {
         "main_comparison_zones_PZ",
     ),
 }
-ARMS = [a for a in ARM_LABELS if a not in ("a_pgd", "apgd_updated", "auto_pgd_plus")]
+# APGD/APGD-updated/Auto-PGD+ are frozen or refuted variants never run against
+# the ResEnc checkpoints (see CLAUDE.md).
+ARMS = [
+    a
+    for a in ARM_LABELS
+    if a
+    not in (
+        "a_pgd",
+        "apgd_updated",
+        "auto_pgd_plus",
+    )
+]
 EPSILONS = [0.02, 0.04, 0.06, 0.08, 0.1]
 CLASS_TAG = {"WG": "WG", "TZ+CZ": "TZCZ", "PZ": "PZ"}
+
+
+def resolve_arms(requested: list[str] | None) -> list[str]:
+    """The active arm roster: ``ARMS`` unless ``requested`` narrows it.
+
+    Every requested arm must be a known key in ``ARM_LABELS``, so a typo in
+    ``--arms`` fails fast instead of silently loading nothing.
+    """
+    if requested is None:
+        return list(ARMS)
+    unknown = [a for a in requested if a not in ARM_LABELS]
+    if unknown:
+        raise ValueError(f"unknown arm(s) in --arms: {unknown}")
+    return list(requested)
+
+
+def has_blade_table(arms: list[str]) -> bool:
+    """Whether ``arms`` covers every arm the BLADE-vs-baseline table needs."""
+    return set(BLADE_ARMS) <= set(arms) and set(BASELINES) <= set(arms)
 
 
 def arch_matrix(
@@ -115,10 +162,10 @@ def arch_matrix(
 
 
 def cross_arch_tests(
-    frames: dict[str, dict[str, pd.DataFrame]], class_name: str
+    frames: dict[str, dict[str, pd.DataFrame]], class_name: str, arms: list[str]
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     omnibus, pairwise = [], []
-    for arm in ARMS:
+    for arm in arms:
         for metric in METRICS:
             for eps in [None, *EPSILONS]:
                 mat = arch_matrix(frames, arm, metric, class_name, eps)
@@ -206,7 +253,9 @@ def blade_vs_baselines(
         for metric in METRICS:
             for eps in [None, *EPSILONS]:
                 if eps is None:
-                    mat = mean_over_epsilons(frames[arch], arms, metric, EPSILONS, class_name)
+                    mat = mean_over_epsilons(
+                        frames[arch], arms, metric, EPSILONS, class_name
+                    )
                 else:
                     mat = build_matrix(frames[arch], metric, eps, arms, class_name)
                 sign = METRIC_DIRECTION[metric]
@@ -251,16 +300,44 @@ def blade_vs_baselines(
     return pd.concat(out, ignore_index=True)
 
 
-def consolidated_ranking(class_name: str) -> pd.DataFrame:
+def consolidated_ranking(
+    class_name: str,
+    arms: list[str],
+    frames: dict[str, dict[str, pd.DataFrame]],
+) -> pd.DataFrame:
+    """Per-architecture medians and BH-adjusted p vs. the strongest arm.
+
+    When ``arms`` is the full default roster, the medians and all-pairs
+    p-values are read from the tree's own ``*_budget_avg_medians.csv`` /
+    ``*_budget_avg_pairwise.csv`` (generated over that same full roster), so
+    the output is byte-identical to a prior full-roster run. For any other
+    ``arms``, both are recomputed directly from ``frames`` restricted to that
+    subset, so the BH family is the requested arms' own all-pairs comparisons,
+    not the full roster's.
+    """
     trees, stem = TREES[class_name]
-    medians = {
-        a: pd.read_csv(os.path.join(RESULTS, t, f"{stem}_budget_avg_medians.csv"))
-        for a, t in trees.items()
-    }
-    pairwise = {
-        a: pd.read_csv(os.path.join(RESULTS, t, f"{stem}_budget_avg_pairwise.csv"))
-        for a, t in trees.items()
-    }
+    if set(arms) == set(ARMS):
+        medians = {
+            a: pd.read_csv(os.path.join(RESULTS, t, f"{stem}_budget_avg_medians.csv"))
+            for a, t in trees.items()
+        }
+        pairwise = {
+            a: pd.read_csv(os.path.join(RESULTS, t, f"{stem}_budget_avg_pairwise.csv"))
+            for a, t in trees.items()
+        }
+    else:
+        medians = {
+            arch: median_summary(
+                frames[arch], arms, list(METRICS), EPSILONS, class_name
+            )
+            for arch in ARCHS
+        }
+        pairwise = {
+            arch: pairwise_median_tests(
+                frames[arch], arms, list(METRICS), EPSILONS, class_name
+            )[1]
+            for arch in ARCHS
+        }
     out = []
     for metric in METRICS:
         strongest = {}
@@ -276,7 +353,7 @@ def consolidated_ranking(class_name: str) -> pd.DataFrame:
         ref_med = medians[REFERENCE_ARCH]
         ref_med = ref_med[ref_med["metric"] == metric].set_index("arm")
         order = sorted(
-            ARMS,
+            arms,
             key=lambda a: -ref_med.loc[a, "median"] * METRIC_DIRECTION[metric],
         )
         for rank, arm in enumerate(order, start=1):
@@ -326,7 +403,8 @@ def render_md(
     omnibus: pd.DataFrame,
     pairwise: pd.DataFrame,
     ranking: pd.DataFrame,
-    blade: pd.DataFrame,
+    blade: pd.DataFrame | None,
+    arms: list[str],
 ) -> str:
     names = {a: ARCH_STYLE[a][0] for a in ARCHS}
     lines = [
@@ -353,7 +431,7 @@ def render_md(
             + " |",
             "|---|---|" + "---|" * (len(ARCHS) - 1),
         ]
-        for arm in ARMS:
+        for arm in arms:
             om = omnibus[
                 (omnibus["arm"] == arm)
                 & (omnibus["metric"] == metric)
@@ -412,40 +490,47 @@ def render_md(
                 f"| {r['rank_nnunet']} | {r['label']} | " + " | ".join(cells) + " |"
             )
         lines.append("")
-    lines += [
-        "## 3. Does the BLADE family out-attack Auto-PGD and SEA? (budget-averaged)",
-        "",
-        "Per architecture: Hodges-Lehmann shift signed so positive = BLADE arm more "
-        "damaging, with BH-adjusted p (family = the 15 BLADE x baseline contrasts of "
-        "that architecture and metric). `=` marks budget-matched pairs.",
-        "",
-    ]
-    for metric in METRICS:
-        sub = blade[(blade["metric"] == metric) & (blade["epsilon"] == "budget_avg")]
+    if blade is not None:
         lines += [
-            f"### {metric}",
+            "## 3. Does the BLADE family out-attack Auto-PGD and SEA? (budget-averaged)",
             "",
-            "| BLADE arm | vs | " + " | ".join(f"{names[a]} HL (p_adj)" for a in ARCHS) + " |",
-            "|---|---|" + "---|" * len(ARCHS),
+            "Per architecture: Hodges-Lehmann shift signed so positive = BLADE arm more "
+            "damaging, with BH-adjusted p (family = the 15 BLADE x baseline contrasts of "
+            "that architecture and metric). `=` marks budget-matched pairs.",
+            "",
         ]
-        for blade_arm in BLADE_ARMS:
-            for base in BASELINES:
-                cells = []
-                for arch in ARCHS:
-                    r = sub[
-                        (sub["arch"] == arch)
-                        & (sub["blade_arm"] == blade_arm)
-                        & (sub["baseline"] == base)
-                    ].iloc[0]
-                    star = "*" if r["significant"] else ""
-                    cells.append(f"{r['hl_shift']:+.3f} ({_fmt_p(r['p_adj_bh'])}){star}")
-                eq = " =" if _budget_matched(blade_arm, base) else ""
-                lines.append(
-                    f"| {ARM_LABELS[blade_arm]} | {ARM_LABELS[base]}{eq} | "
-                    + " | ".join(cells)
-                    + " |"
-                )
-        lines.append("")
+        for metric in METRICS:
+            sub = blade[
+                (blade["metric"] == metric) & (blade["epsilon"] == "budget_avg")
+            ]
+            lines += [
+                f"### {metric}",
+                "",
+                "| BLADE arm | vs | "
+                + " | ".join(f"{names[a]} HL (p_adj)" for a in ARCHS)
+                + " |",
+                "|---|---|" + "---|" * len(ARCHS),
+            ]
+            for blade_arm in BLADE_ARMS:
+                for base in BASELINES:
+                    cells = []
+                    for arch in ARCHS:
+                        r = sub[
+                            (sub["arch"] == arch)
+                            & (sub["blade_arm"] == blade_arm)
+                            & (sub["baseline"] == base)
+                        ].iloc[0]
+                        star = "*" if r["significant"] else ""
+                        cells.append(
+                            f"{r['hl_shift']:+.3f} ({_fmt_p(r['p_adj_bh'])}){star}"
+                        )
+                    eq = " =" if _budget_matched(blade_arm, base) else ""
+                    lines.append(
+                        f"| {ARM_LABELS[blade_arm]} | {ARM_LABELS[base]}{eq} | "
+                        + " | ".join(cells)
+                        + " |"
+                    )
+            lines.append("")
     return "\n".join(lines)
 
 
@@ -456,21 +541,37 @@ def main() -> None:
         default=os.path.join(RESULTS, "attack_comparison", "stats"),
     )
     parser.add_argument("--classes", nargs="+", default=list(TREES))
+    parser.add_argument(
+        "--arms",
+        nargs="+",
+        default=None,
+        help=(
+            "Restrict the arm roster (default: the full "
+            f"{len(ARMS)}-arm roster {ARMS}). Every BH family is recomputed on "
+            "the requested arms; the BLADE-vs-baseline table is skipped unless "
+            "the requested arms cover every BLADE arm and baseline."
+        ),
+    )
     args = parser.parse_args()
+    arms = resolve_arms(args.arms)
     os.makedirs(args.output_dir, exist_ok=True)
     for class_name in args.classes:
         trees, _ = TREES[class_name]
         frames = {
-            arch: {arm: load_per_sample(os.path.join(RESULTS, t), arm) for arm in ARMS}
+            arch: {arm: load_per_sample(os.path.join(RESULTS, t), arm) for arm in arms}
             for arch, t in trees.items()
         }
-        omnibus, pairwise = cross_arch_tests(frames, class_name)
-        ranking = consolidated_ranking(class_name)
-        blade = blade_vs_baselines(frames, class_name)
-        tag = CLASS_TAG[class_name]
-        blade.to_csv(
-            os.path.join(args.output_dir, f"blade_vs_apgd_sea_{tag}.csv"), index=False
+        omnibus, pairwise = cross_arch_tests(frames, class_name, arms)
+        ranking = consolidated_ranking(class_name, arms, frames)
+        blade = (
+            blade_vs_baselines(frames, class_name) if has_blade_table(arms) else None
         )
+        tag = CLASS_TAG[class_name]
+        if blade is not None:
+            blade.to_csv(
+                os.path.join(args.output_dir, f"blade_vs_apgd_sea_{tag}.csv"),
+                index=False,
+            )
         omnibus.to_csv(
             os.path.join(args.output_dir, f"cross_arch_friedman_{tag}.csv"), index=False
         )
@@ -484,7 +585,7 @@ def main() -> None:
         with open(
             os.path.join(args.output_dir, f"attack_architecture_stats_{tag}.md"), "w"
         ) as fh:
-            fh.write(render_md(class_name, omnibus, pairwise, ranking, blade))
+            fh.write(render_md(class_name, omnibus, pairwise, ranking, blade, arms))
         n = omnibus["n_cases"].unique().tolist()
         print(
             f"{class_name}: n_cases={n}, {len(omnibus)} omnibus rows, {len(pairwise)} pairwise rows"
