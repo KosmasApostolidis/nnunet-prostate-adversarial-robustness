@@ -16,6 +16,12 @@ Both figures are built strictly from the evidence CSVs under
 - ``--fig2-steps`` writes only the replacement Fig. 2 (``fig2_case_steps.pdf``):
   per-case Auto-PGD architecture and regime steps per region, from
   ``revision/E33_*`` (``analyze_resenc_round3_evidence.py``).
+- ``--fig2-dice`` writes only the current Fig. 2 (``fig2_dice_boxplots.pdf``):
+  per-case clean vs. budget-averaged Auto-PGD Dice per model and region, from
+  ``revision/E35_per_case_dice_clean_auto_pgd.csv``.
+- ``--fig2-eps-steps`` writes only the current Fig. 2 (``fig2_eps_steps.pdf``):
+  mean Auto-PGD architecture and regime steps vs. epsilon per region with
+  95% CI bands, from ``revision/E27_E28_per_epsilon_steps.csv``.
 
 ``--compact`` shrinks both figures for the EMBC page limit (Fig. 1 legend on
 top, y ticks 0/0.5/1; Fig. 2 tighter rows, one-line share header); without it
@@ -234,7 +240,9 @@ def plot_fig1(
             Line2D(
                 [0], [0], color="black", linestyle="-", linewidth=1.3, label="Auto-PGD"
             ),
-            Line2D([0], [0], color="black", linestyle="--", linewidth=1.3, label="SEA-20"),
+            Line2D(
+                [0], [0], color="black", linestyle="--", linewidth=1.3, label="SEA-20"
+            ),
         ]
         if compact:
             fig.legend(
@@ -641,6 +649,143 @@ def plot_fig2_steps(
         plt.close(fig)
 
 
+def load_fig2_dice_data(evidence_dir: Path) -> pd.DataFrame:
+    return pd.read_csv(evidence_dir / "revision" / "E35_per_case_dice_clean_auto_pgd.csv")
+
+
+def plot_fig2_dice(
+    dice: pd.DataFrame, step_summary: pd.DataFrame, output_dir: Path
+) -> None:
+    """Top: per-case Dice per model, clean (light box) next to budget-averaged
+    Auto-PGD (solid box); boxes: quartiles, whiskers: 2.5-97.5 percentiles.
+    Bottom: mean architecture and regime steps per region with their
+    within-fold bootstrap 95% CIs (revision/E33), showing the WG/zones reversal."""
+    conditions = {"clean": (-0.18, 0.25), "auto_pgd": (0.18, 0.85)}
+    with plt.rc_context(RC_PARAMS):
+        fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH_IN, 1.95))
+        grid = fig.add_gridspec(2, len(CLASS_ORDER), height_ratios=[1.0, 0.42], hspace=0.5)
+        axes = [fig.add_subplot(grid[0, 0])]
+        axes += [fig.add_subplot(grid[0, k], sharey=axes[0]) for k in (1, 2)]
+        for ax in axes[1:]:
+            ax.tick_params(labelleft=False)
+        for ax, region in zip(axes, CLASS_ORDER):
+            g = dice[dice["class_name"] == region]
+            for i, arch in enumerate(ARCH_ORDER):
+                for cond, (dx, alpha) in conditions.items():
+                    vals = g[(g["arch"] == arch) & (g["condition"] == cond)]["dice"]
+                    ax.boxplot(
+                        vals.to_numpy(),
+                        positions=[i + dx],
+                        widths=0.3,
+                        whis=(2.5, 97.5),
+                        showfliers=False,
+                        patch_artist=True,
+                        boxprops={
+                            "facecolor": ARCH_COLORS[arch],
+                            "alpha": alpha,
+                            "edgecolor": ARCH_COLORS[arch],
+                            "linewidth": 0.6,
+                        },
+                        medianprops={"color": "black", "linewidth": 0.8},
+                        whiskerprops={"color": ARCH_COLORS[arch], "linewidth": 0.6},
+                        capprops={"color": ARCH_COLORS[arch], "linewidth": 0.6},
+                    )
+            ax.set_title(region, fontsize=FONT_SIZE_BASE, pad=2)
+            ax.set_xticks(range(len(ARCH_ORDER)))
+            ax.set_xticklabels(["nnU", "M", "L", "XL"], fontsize=FONT_SIZE_BASE - 1)
+            ax.set_xlim(-0.55, len(ARCH_ORDER) - 0.45)
+            ax.set_ylim(0, 1.0)
+        axes[0].set_ylabel("Per-case Dice")
+        handles = [
+            plt.Rectangle((0, 0), 1, 1, facecolor="0.5", alpha=a, edgecolor="0.4", label=lab)
+            for lab, a in (("Clean", 0.25), ("Auto-PGD (budget-averaged)", 0.85))
+        ]
+        axes[0].legend(
+            handles=handles,
+            loc="lower center",
+            bbox_to_anchor=(1.65, 1.13),
+            frameon=False,
+            ncol=2,
+            handlelength=1.2,
+            fontsize=FONT_SIZE_BASE - 1,
+        )
+        fig.subplots_adjust(wspace=0.12)
+        steps_ax = fig.add_subplot(grid[1, :])
+        steps_ax.axhline(0.0, color="0.6", linewidth=0.6, zorder=0)
+        for k, region in enumerate(CLASS_ORDER):
+            s_row = step_summary.loc[region]
+            for step, dx in (("architecture", -0.14), ("regime", 0.14)):
+                steps_ax.bar(
+                    k + dx,
+                    s_row[step],
+                    width=0.26,
+                    color={"architecture": "0.65", "regime": "0.2"}[step],
+                    label=STEP_LABELS[step] if k == 0 else None,
+                    yerr=[[s_row[step] - s_row[f"{step}_ci_lo"]], [s_row[f"{step}_ci_hi"] - s_row[step]]],
+                    error_kw={"elinewidth": 0.8, "capsize": 1.5},
+                )
+        steps_ax.set_xticks(range(len(CLASS_ORDER)))
+        steps_ax.set_xticklabels(CLASS_ORDER, fontsize=FONT_SIZE_BASE - 1)
+        steps_ax.set_ylabel("Mean step", fontsize=FONT_SIZE_BASE)
+        steps_ax.legend(loc="upper center", bbox_to_anchor=(0.62, 1.05), frameon=False, ncol=2, fontsize=FONT_SIZE_BASE - 1, handlelength=1.0)
+        steps_ax.set_ylim(0, 0.26)
+        _save(fig, output_dir, "fig2_dice_boxplots")
+        plt.close(fig)
+
+
+def load_fig2_eps_steps_data(evidence_dir: Path, arm: str = "auto_pgd") -> pd.DataFrame:
+    steps = pd.read_csv(evidence_dir / "revision" / "E27_E28_per_epsilon_steps.csv")
+    return steps[steps["arm"] == arm]
+
+
+def plot_fig2_eps_steps(steps: pd.DataFrame, output_dir: Path) -> None:
+    """Mean architecture (``encoder``) and regime (``batch_xl``) steps vs.
+    epsilon per region, with their within-fold bootstrap 95% CIs (revision/E27)."""
+    columns = {"architecture": "encoder", "regime": "batch_xl"}
+    with plt.rc_context(RC_PARAMS):
+        fig, axes = plt.subplots(
+            1, len(CLASS_ORDER), figsize=(SINGLE_COLUMN_WIDTH_IN, 1.5), sharey=True
+        )
+        for ax, region in zip(axes, CLASS_ORDER):
+            g = steps[steps["class_name"] == region].sort_values("epsilon")
+            ax.axhline(0.0, color="0.6", linewidth=0.6, zorder=0)
+            for step, col in columns.items():
+                ax.fill_between(
+                    g["epsilon"],
+                    g[f"{col}_ci_lo"],
+                    g[f"{col}_ci_hi"],
+                    color=STEP_COLORS[step],
+                    alpha=0.25,
+                    linewidth=0,
+                )
+                ax.plot(
+                    g["epsilon"],
+                    g[f"{col}_mean"],
+                    color=STEP_COLORS[step],
+                    marker="o",
+                    markersize=2.5,
+                    linewidth=1.2,
+                    label=STEP_LABELS[step],
+                )
+            ax.set_title(region, fontsize=FONT_SIZE_BASE, pad=2)
+            ax.set_xticks([0.02, 0.06, 0.10])
+            ax.set_xticklabels([".02", ".06", ".10"])
+            ax.set_xlim(0.012, 0.108)
+        axes[0].set_ylabel("Mean step in Dice")
+        fig.supxlabel(r"Attack budget $\varepsilon$", fontsize=FONT_SIZE_BASE, y=-0.13)
+        axes[0].legend(
+            loc="lower center",
+            bbox_to_anchor=(1.65, 1.13),
+            frameon=False,
+            ncol=2,
+            handlelength=1.4,
+            fontsize=FONT_SIZE_BASE - 1,
+        )
+        fig.subplots_adjust(wspace=0.18)
+        _save(fig, output_dir, "fig2_eps_steps")
+        plt.close(fig)
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -687,6 +832,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Only write Fig. 2 as per-case Auto-PGD step boxplots "
         "(fig2_case_steps.{pdf,png}, from revision/E33); Fig. 1 is left untouched.",
     )
+    parser.add_argument(
+        "--fig2-dice",
+        action="store_true",
+        help="Only write Fig. 2 as per-case clean vs. budget-averaged Auto-PGD Dice "
+        "boxplots per model and region (fig2_dice_boxplots.{pdf,png}, from revision/E35).",
+    )
+    parser.add_argument(
+        "--fig2-eps-steps",
+        action="store_true",
+        help="Only write Fig. 2 as Auto-PGD architecture and regime steps vs. "
+        "epsilon per region (fig2_eps_steps.{pdf,png}, from revision/E27).",
+    )
     return parser.parse_args(argv)
 
 
@@ -695,6 +852,20 @@ def main(argv: list[str] | None = None) -> None:
     if args.fig2_steps:
         plot_fig2_steps(*load_fig2_steps_data(args.evidence_dir), args.output_dir)
         print(f"Wrote fig2_case_steps to {args.output_dir}")
+        return
+    if args.fig2_dice:
+        plot_fig2_dice(
+            load_fig2_dice_data(args.evidence_dir),
+            load_fig2_steps_data(args.evidence_dir)[1],
+            args.output_dir,
+        )
+        print(f"Wrote fig2_dice_boxplots to {args.output_dir}")
+        return
+    if args.fig2_eps_steps:
+        plot_fig2_eps_steps(
+            load_fig2_eps_steps_data(args.evidence_dir), args.output_dir
+        )
+        print(f"Wrote fig2_eps_steps to {args.output_dir}")
         return
 
     per_eps, clean = load_fig1_data(args.evidence_dir)

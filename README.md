@@ -131,7 +131,7 @@ PYTHONPATH=src python experiments/analyze_resenc_round3_evidence.py
 python experiments/check_zonal_confinement_source.py --n 12
 # figures
 PYTHONPATH=src python experiments/plot_resenc_paper_figures.py --compact
-PYTHONPATH=src python experiments/plot_resenc_paper_figures.py --fig2-steps
+PYTHONPATH=src python experiments/plot_resenc_paper_figures.py --fig2-dice   # Fig. 2 (from revision/E35, E33)
 ```
 
 ## Attacks

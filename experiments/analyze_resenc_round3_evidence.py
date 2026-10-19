@@ -94,6 +94,22 @@ def e33_per_case_steps(data: rev.Data, arm: str = "auto_pgd") -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def e35_per_case_dice(data: rev.Data, arm: str = "auto_pgd") -> pd.DataFrame:
+    """Per-case clean and budget-averaged attacked Dice per model (new Fig. 2)."""
+    frames = []
+    for c in rev.TREES:
+        for condition, mat in (
+            ("clean", data.clean(c)),
+            (arm, data.mat(c, arm, "dice", None)),
+        ):
+            long = mat.reset_index().melt(
+                id_vars=mat.index.name or "index", var_name="arch", value_name="dice"
+            )
+            long.columns = ["case_id", "arch", "dice"]
+            frames.append(long.assign(class_name=c, condition=condition))
+    return pd.concat(frames, ignore_index=True)
+
+
 def e33_summary(steps: pd.DataFrame) -> pd.DataFrame:
     """Mean step with fold-stratified bootstrap CI, and the paired Wilcoxon test."""
     rows = []
@@ -245,6 +261,7 @@ def main() -> None:
         (e30_fold_summary(per_fold), "E30_fold_level_summary.csv"),
         (steps := e33_per_case_steps(data), "E33_per_case_steps_auto_pgd.csv"),
         (e33_summary(steps), "E33_step_summary_auto_pgd.csv"),
+        (e35_per_case_dice(data), "E35_per_case_dice_clean_auto_pgd.csv"),
     ):
         df.to_csv(os.path.join(args.output_dir, name), index=False)
         print(f"wrote {name}: {len(df)} rows")
