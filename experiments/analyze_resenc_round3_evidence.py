@@ -110,6 +110,30 @@ def e35_per_case_dice(data: rev.Data, arm: str = "auto_pgd") -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def e36_per_case_all_metrics(data: rev.Data) -> pd.DataFrame:
+    """Per-case clean and budget-averaged attacked Dice/HD95/ASD per model and
+    attack (new Fig. 1). HD95/ASD average only the budgets where they are defined."""
+    frames = []
+    for c in rev.TREES:
+        for metric in ("dice", "hd95", "asd"):
+            clean = pd.DataFrame(
+                {
+                    a: rev.build_matrix(
+                        {"pgd": data.frames[c][a]["pgd"]}, metric, 0.0, ["pgd"], c
+                    )["pgd"]
+                    for a in rev.ARCHS
+                }
+            )
+            for condition, mat in [("clean", clean)] + [
+                (arm, data.mat(c, arm, metric, None)) for arm in rev.NON_DAG
+            ]:
+                long = mat.rename_axis("case_id").reset_index().melt(
+                    id_vars="case_id", var_name="arch", value_name="value"
+                )
+                frames.append(long.assign(class_name=c, metric=metric, condition=condition))
+    return pd.concat(frames, ignore_index=True).dropna(subset=["value"])
+
+
 def e33_summary(steps: pd.DataFrame) -> pd.DataFrame:
     """Mean step with fold-stratified bootstrap CI, and the paired Wilcoxon test."""
     rows = []
@@ -262,6 +286,7 @@ def main() -> None:
         (steps := e33_per_case_steps(data), "E33_per_case_steps_auto_pgd.csv"),
         (e33_summary(steps), "E33_step_summary_auto_pgd.csv"),
         (e35_per_case_dice(data), "E35_per_case_dice_clean_auto_pgd.csv"),
+        (e36_per_case_all_metrics(data), "E36_per_case_all_metrics.csv"),
     ):
         df.to_csv(os.path.join(args.output_dir, name), index=False)
         print(f"wrote {name}: {len(df)} rows")

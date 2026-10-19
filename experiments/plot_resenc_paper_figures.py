@@ -16,6 +16,9 @@ Both figures are built strictly from the evidence CSVs under
 - ``--fig2-steps`` writes only the replacement Fig. 2 (``fig2_case_steps.pdf``):
   per-case Auto-PGD architecture and regime steps per region, from
   ``revision/E33_*`` (``analyze_resenc_round3_evidence.py``).
+- ``--fig1-metrics`` writes only the current Fig. 1 (``fig1_metrics_boxplots.pdf``):
+  per-case Dice/HD95/ASD for every model, clean and the seven attacks, from
+  ``revision/E36_per_case_all_metrics.csv``.
 - ``--fig2-dice`` writes only the current Fig. 2 (``fig2_dice_boxplots.pdf``):
   per-case clean vs. budget-averaged Auto-PGD Dice per model and region, from
   ``revision/E35_per_case_dice_clean_auto_pgd.csv``.
@@ -733,6 +736,101 @@ def plot_fig2_dice(
         plt.close(fig)
 
 
+FIG1_CONDITIONS: tuple[str, ...] = (
+    "clean", "fgsm", "pgd", "segpgd", "cospgd", "auto_pgd", "auto_pgd_r3", "sea",
+)
+FIG1_CONDITION_LABELS: dict[str, str] = {
+    **ATTACK_LABELS, "clean": "Clean", "sea": "SEA-20",
+}
+FIG1_METRICS: dict[str, tuple[str, bool]] = {
+    "dice": ("Dice", False),
+    "hd95": ("HD95\n(mm)", True),
+    "asd": ("ASD\n(mm)", True),
+}
+DOUBLE_COLUMN_WIDTH_IN = 7.16
+
+
+def load_fig1_metrics_data(evidence_dir: Path) -> pd.DataFrame:
+    return pd.read_csv(evidence_dir / "revision" / "E36_per_case_all_metrics.csv")
+
+
+def plot_fig1_metrics(values: pd.DataFrame, output_dir: Path) -> None:
+    """Per-case clean and budget-averaged attacked Dice, HD95 and ASD for every
+    model and attack (revision/E36): rows = metrics, columns = regions, groups =
+    conditions, one box per model. Boxes: quartiles and median; whiskers:
+    2.5-97.5 percentiles; HD95/ASD on a log axis."""
+    offsets = np.linspace(-0.3, 0.3, len(ARCH_ORDER))
+    with plt.rc_context(RC_PARAMS):
+        fig, axes = plt.subplots(
+            len(FIG1_METRICS),
+            len(CLASS_ORDER),
+            figsize=(DOUBLE_COLUMN_WIDTH_IN, 2.2),
+            sharex=True,
+            sharey="row",
+        )
+        for r, (metric, (label, log)) in enumerate(FIG1_METRICS.items()):
+            for c, region in enumerate(CLASS_ORDER):
+                ax = axes[r, c]
+                g = values[(values["metric"] == metric) & (values["class_name"] == region)]
+                for k, cond in enumerate(FIG1_CONDITIONS):
+                    for dx, arch in zip(offsets, ARCH_ORDER):
+                        vals = g[(g["condition"] == cond) & (g["arch"] == arch)]["value"]
+                        if log:
+                            vals = vals[vals > 0]
+                        ax.boxplot(
+                            vals.to_numpy(),
+                            positions=[k + dx],
+                            widths=0.17,
+                            whis=(2.5, 97.5),
+                            showfliers=False,
+                            patch_artist=True,
+                            boxprops={
+                                "facecolor": ARCH_COLORS[arch],
+                                "alpha": 0.85,
+                                "edgecolor": ARCH_COLORS[arch],
+                                "linewidth": 0.5,
+                            },
+                            medianprops={"color": "black", "linewidth": 0.6},
+                            whiskerprops={"color": ARCH_COLORS[arch], "linewidth": 0.5},
+                            capprops={"color": ARCH_COLORS[arch], "linewidth": 0.5},
+                        )
+                for k in range(1, len(FIG1_CONDITIONS)):
+                    ax.axvline(k - 0.5, color="0.88", linewidth=0.5, zorder=0)
+                if log:
+                    ax.set_yscale("log")
+                else:
+                    ax.set_ylim(0, 1.0)
+                if r == 0:
+                    ax.set_title(region, fontsize=FONT_SIZE_LABEL, pad=3)
+                if c == 0:
+                    ax.set_ylabel(label)
+                else:
+                    ax.tick_params(labelleft=False)
+                ax.set_xlim(-0.55, len(FIG1_CONDITIONS) - 0.45)
+                ax.set_xticks(range(len(FIG1_CONDITIONS)))
+                ax.set_xticklabels(
+                    [FIG1_CONDITION_LABELS[k] for k in FIG1_CONDITIONS],
+                    rotation=90,
+                    ha="center",
+                    fontsize=FONT_SIZE_BASE - 1,
+                )
+                ax.tick_params(axis="y", labelsize=FONT_SIZE_BASE - 1)
+        fig.legend(
+            handles=[
+                plt.Rectangle((0, 0), 1, 1, facecolor=ARCH_COLORS[a], alpha=0.85, label=ARCH_LABELS[a])
+                for a in ARCH_ORDER
+            ],
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.93),
+            ncol=len(ARCH_ORDER),
+            frameon=False,
+        )
+        fig.subplots_adjust(hspace=0.12, wspace=0.05)
+        fig.align_ylabels(axes[:, 0])
+        _save(fig, output_dir, "fig1_metrics_boxplots")
+        plt.close(fig)
+
+
 def load_fig2_eps_steps_data(evidence_dir: Path, arm: str = "auto_pgd") -> pd.DataFrame:
     steps = pd.read_csv(evidence_dir / "revision" / "E27_E28_per_epsilon_steps.csv")
     return steps[steps["arm"] == arm]
@@ -833,6 +931,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "(fig2_case_steps.{pdf,png}, from revision/E33); Fig. 1 is left untouched.",
     )
     parser.add_argument(
+        "--fig1-metrics",
+        action="store_true",
+        help="Only write Fig. 1 as per-case Dice/HD95/ASD boxplots for every model, "
+        "clean and each of the seven attacks (fig1_metrics_boxplots.{pdf,png}, from "
+        "revision/E36).",
+    )
+    parser.add_argument(
         "--fig2-dice",
         action="store_true",
         help="Only write Fig. 2 as per-case clean vs. budget-averaged Auto-PGD Dice "
@@ -852,6 +957,10 @@ def main(argv: list[str] | None = None) -> None:
     if args.fig2_steps:
         plot_fig2_steps(*load_fig2_steps_data(args.evidence_dir), args.output_dir)
         print(f"Wrote fig2_case_steps to {args.output_dir}")
+        return
+    if args.fig1_metrics:
+        plot_fig1_metrics(load_fig1_metrics_data(args.evidence_dir), args.output_dir)
+        print(f"Wrote fig1_metrics_boxplots to {args.output_dir}")
         return
     if args.fig2_dice:
         plot_fig2_dice(
