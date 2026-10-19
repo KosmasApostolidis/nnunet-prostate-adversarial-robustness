@@ -656,11 +656,11 @@ def load_fig2_dice_data(evidence_dir: Path) -> pd.DataFrame:
 def plot_fig2_dice(
     dice: pd.DataFrame, step_summary: pd.DataFrame, output_dir: Path
 ) -> None:
-    """Top: per-case Dice per model, clean (light box) next to budget-averaged
-    Auto-PGD (solid box); boxes: quartiles, whiskers: 2.5-97.5 percentiles.
+    """Top: per-case Dice per model, clean (blue box) next to budget-averaged
+    Auto-PGD (vermillion box); boxes: quartiles, whiskers: 2.5-97.5 percentiles.
     Bottom: mean architecture and regime steps per region with their
     within-fold bootstrap 95% CIs (revision/E33), showing the WG/zones reversal."""
-    conditions = {"clean": (-0.18, 0.25), "auto_pgd": (0.18, 0.85)}
+    conditions = {"clean": (-0.18, "#56B4E9"), "auto_pgd": (0.18, "#D55E00")}
     with plt.rc_context(RC_PARAMS):
         fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH_IN, 1.95))
         grid = fig.add_gridspec(2, len(CLASS_ORDER), height_ratios=[1.0, 0.42], hspace=0.5)
@@ -671,7 +671,7 @@ def plot_fig2_dice(
         for ax, region in zip(axes, CLASS_ORDER):
             g = dice[dice["class_name"] == region]
             for i, arch in enumerate(ARCH_ORDER):
-                for cond, (dx, alpha) in conditions.items():
+                for cond, (dx, color) in conditions.items():
                     vals = g[(g["arch"] == arch) & (g["condition"] == cond)]["dice"]
                     ax.boxplot(
                         vals.to_numpy(),
@@ -681,14 +681,14 @@ def plot_fig2_dice(
                         showfliers=False,
                         patch_artist=True,
                         boxprops={
-                            "facecolor": ARCH_COLORS[arch],
-                            "alpha": alpha,
-                            "edgecolor": ARCH_COLORS[arch],
+                            "facecolor": color,
+                            "alpha": 0.85,
+                            "edgecolor": color,
                             "linewidth": 0.6,
                         },
                         medianprops={"color": "black", "linewidth": 0.8},
-                        whiskerprops={"color": ARCH_COLORS[arch], "linewidth": 0.6},
-                        capprops={"color": ARCH_COLORS[arch], "linewidth": 0.6},
+                        whiskerprops={"color": color, "linewidth": 0.6},
+                        capprops={"color": color, "linewidth": 0.6},
                     )
             ax.set_title(region, fontsize=FONT_SIZE_BASE, pad=2)
             ax.set_xticks(range(len(ARCH_ORDER)))
@@ -697,8 +697,8 @@ def plot_fig2_dice(
             ax.set_ylim(0, 1.0)
         axes[0].set_ylabel("Per-case Dice")
         handles = [
-            plt.Rectangle((0, 0), 1, 1, facecolor="0.5", alpha=a, edgecolor="0.4", label=lab)
-            for lab, a in (("Clean", 0.25), ("Auto-PGD (budget-averaged)", 0.85))
+            plt.Rectangle((0, 0), 1, 1, facecolor=conditions[c][1], alpha=0.85, label=lab)
+            for c, lab in (("clean", "Clean"), ("auto_pgd", "Auto-PGD (budget-averaged)"))
         ]
         axes[0].legend(
             handles=handles,
